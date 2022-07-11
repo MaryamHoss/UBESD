@@ -3,7 +3,6 @@ from datetime import timedelta
 
 sys.path.append('../')
 
-## For Luca: please put every thing you want to add after this line 
 from tensorflow_addons.callbacks import TimeStopping
 from GenericTools.KerasTools.esoteric_optimizers.AdaBelief import AdaBelief
 from GenericTools.KerasTools.esoteric_callbacks import LRFinder
@@ -14,12 +13,12 @@ from GenericTools.KerasTools.plot_tools import plot_history
 from GenericTools.StayOrganizedTools.VeryCustomSacred import CustomExperiment, ChooseGPU
 from GenericTools.StayOrganizedTools.utils import timeStructured
 
-from TrialsOfNeuralVocalRecon.neural_models import build_model
-from TrialsOfNeuralVocalRecon.tools.plotting import one_plot_test
-from TrialsOfNeuralVocalRecon.data_processing.data_collection import getData,getData_mes
+from UBESD.neural_models import build_model
+from UBESD.tools.plotting import one_plot_test
+from UBESD.data_processing.data_collection import getData,getData_mes
 from tensorflow.keras.optimizers import Adam
-from TrialsOfNeuralVocalRecon.tools.calculate_intelligibility import find_intel
-from TrialsOfNeuralVocalRecon.tools.utils.losses import *
+from UBESD.tools.calculate_intelligibility import find_intel
+from UBESD.tools.utils.losses import *
 import tensorflow.keras.backend as K
 import pickle
 import tensorflow as tf
@@ -41,7 +40,7 @@ def cfg():
     learning_rate = 1e-05
     seed = 14
     epochs = 2
-    batch_size = 8  # 8 for 5 seconds #16 for 2 seconds
+    batch_size = 8 
 
     
     # _FiLM_v1_soundencoderresnet_convblock:cnrd_mmfilter:64:64_dilation:_nconvs:4
