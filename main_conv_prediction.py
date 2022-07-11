@@ -4,14 +4,13 @@ from datetime import timedelta
 sys.path.append('../')
 
 from tensorflow_addons.callbacks import TimeStopping
-from GenericTools.KerasTools.esoteric_optimizers.AdaBelief import AdaBelief
-from GenericTools.KerasTools.esoteric_callbacks import LRFinder
+from UBESD.tools.AdaBelief import AdaBelief
 
 import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from GenericTools.KerasTools.plot_tools import plot_history
-from GenericTools.StayOrganizedTools.VeryCustomSacred import CustomExperiment, ChooseGPU
-from GenericTools.StayOrganizedTools.utils import timeStructured
+from UBESD.tools.plot_tools import plot_history
+from UBESD.tools.VeryCustomSacred import CustomExperiment, ChooseGPU
+from UBESD.tools.utils import timeStructured
 
 from UBESD.neural_models import build_model
 from UBESD.tools.plotting import one_plot_test
@@ -25,7 +24,7 @@ import tensorflow as tf
 
 tf.compat.v1.disable_eager_execution()
 
-from GenericTools.StayOrganizedTools.utils import setReproducible
+from UBESD.tools.utils import setReproducible
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
@@ -94,14 +93,6 @@ def get_callbacks(hours,path_best_model, history_path, data_type, images_dir):
         checkpoint, earlystopping, csvlogger, reduce_lr,
         TimeStopping((hours-1)*3600, 1)  # 31 hours: 111600 s 21 hours: 75600 s #223200 62 hours #33: 115200
     ]  # , tensorboard]
-
-
-    if 'lrfinder' in data_type:
-        callbacks.append(
-            LRFinder(min_lr=1e-6, max_lr=1e-1, path_tmp=images_dir),
-        )
-
-    return callbacks
 
 
 @ex.automain
