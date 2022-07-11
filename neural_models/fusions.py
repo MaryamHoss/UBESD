@@ -53,6 +53,41 @@ def FiLM_Fusion(size, data_type='sum', initializer='orthogonal', n_filters=0):
             # FiLM ends ---------
 
             layer = [sound, spikes]
+            
+        elif 'FiLM_v5' in data_type:
+            
+            #just modulating the sound
+            # FiLM starts -------
+            beta_snd = Conv1D(size, 3, padding='same', kernel_initializer=initializer)(spikes)
+            gamma_snd = Conv1D(size, 3, padding='same', kernel_initializer=initializer)(spikes)
+
+
+            # changes: 20-8-20 instead of + I made a layer with ADD
+            # sound = Multiply()([sound, gamma_snd]) + beta_snd
+            sound = Add()([Multiply()([sound, gamma_snd]), beta_snd])
+            # spikes = Multiply()([spikes, gamma_spk]) + beta_spk
+
+            # FiLM ends ---------
+
+            layer = [sound, spikes]        
+            
+        elif 'FiLM_v6' in data_type:
+            # FiLM starts -------
+
+            #just modulating the spikes
+            beta_spk = Conv1D(size, 3, padding='same', kernel_initializer=initializer)(sound)
+            gamma_spk = Conv1D(size, 3, padding='same', kernel_initializer=initializer)(sound)
+
+            # changes: 20-8-20 instead of + I made a layer with ADD
+            # sound = Multiply()([sound, gamma_snd]) + beta_snd
+            # spikes = Multiply()([spikes, gamma_spk]) + beta_spk
+            spikes = Add()([Multiply()([spikes, gamma_spk]), beta_spk])
+
+            # FiLM ends ---------
+
+            layer = [sound, spikes]       
+            
+            
 
         elif 'performer' in data_type:
             config = PerformerAttentionConfig()
@@ -85,6 +120,7 @@ def Fusion(data_type='Add'):
 
         elif 'OnlySpike' in data_type:
             layer = spikes
+
         elif '_add' in data_type:
             layer = Add()(inputs)
 
@@ -94,7 +130,7 @@ def Fusion(data_type='Add'):
         elif '_choice' in data_type:
             layer = ChoiceGated()(inputs)
 
-        elif 'FiLM_v1' in data_type or 'FiLM_v3' in data_type:
+        elif 'FiLM_v1' in data_type or 'FiLM_v3' in data_type or 'FiLM_v5' in data_type or 'FiLM_v6' in data_type:
             layer = Concatenate(axis=-1)(inputs)
 
         elif 'FiLM_v2' in data_type or 'FiLM_v4' in data_type:

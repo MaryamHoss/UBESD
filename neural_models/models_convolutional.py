@@ -46,9 +46,11 @@ def ConvBlock(n_filters, kernel_size, activation, kernel_initializer, data_type,
 
     padding = 'causal' if not 'noncausal' in data_type else 'same'
 
-    if 'separable' in data_type:
+    if 'separable' in data_type and 'dilation' in data_type:
+        dilation_rate = 2 ** i
         conv = SeparableConv1D(n_filters, kernel_size, activation=activation, padding=padding,
-                               depthwise_initializer=kernel_initializer, pointwise_initializer=kernel_initializer)
+                               depthwise_initializer=kernel_initializer, pointwise_initializer=kernel_initializer,
+                               dilation_rate=dilation_rate)
     elif 'dilation:' in data_type:
         # dilation_rate = select_from_string(data_type, id='dilation:', output_type='int')
         dilation_rate = 2 ** i
@@ -88,7 +90,7 @@ def build_conv_with_fusion(
         n_convolutions=3,
         min_filters=5,
         max_filters=100,
-        kernel_size=25,
+        kernel_size=25, #25
         weight_decay=.1,
         clipnorm=1.
 ):
@@ -268,7 +270,7 @@ def build_conv_with_fusion_skip(data_type='WithSpikes',
                                 n_convolutions=3,
                                 min_filters=5,
                                 max_filters=100,
-                                kernel_size=25,
+                                kernel_size=25,#25
                                 weight_decay=.1,
                                 clipnorm=1.
                                 ):
@@ -373,10 +375,16 @@ def build_conv_with_fusion_skip(data_type='WithSpikes',
         spike4 = Add()([spike2, spike4])
 
         spike4 = Activation('relu')(spike4)
+        
+        
 
     decoded = Fusion(data_type)([sound4, spike4])
-
-    decoded1 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+    
+    if 'separable' in data_type:
+        decoded1 = SeparableConv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+                     depthwise_initializer=initializer, pointwise_initializer=initializer, name='decoder1')(decoded)
+    else:
+        decoded1 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
                       kernel_initializer=initializer, name='decoder1')(decoded)
     if 'unet' in data_type:
         decoded1 = Concatenate(axis=-1)([decoded1, sound4])
@@ -384,15 +392,27 @@ def build_conv_with_fusion_skip(data_type='WithSpikes',
     # decoded = Dropout(0.3)(LayerNormalization(axis=[2])(LeakyReLU()(decoded)))  # second version
     # decoded = LayerNormalization(axis=[2])(Dropout(0.3)(decoded)) #third
 
-    decoded2 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+
+    if 'separable' in data_type:
+        decoded2 = SeparableConv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+                     depthwise_initializer=initializer, pointwise_initializer=initializer, name='decoder2')(decoded1)
+        
+    else:
+        decoded2 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
                       kernel_initializer=initializer, name='decoder2')(decoded1)
+        
+        
     if 'unet' in data_type:
         decoded2 = Concatenate(axis=-1)([decoded2, sound3])
     decoded2 = Dropout(0.3)(LeakyReLU()(LayerNormalization(axis=[2])(decoded2)))  # first version
     # decoded = Dropout(0.3)(LayerNormalization(axis=[2])(LeakyReLU()(decoded)))  # second version
     # decoded = LayerNormalization(axis=[2])(Dropout(0.3)(decoded)) #third
 
-    decoded3 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+    if 'separable' in data_type:
+        decoded3 = SeparableConv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+                     depthwise_initializer=initializer, pointwise_initializer=initializer, name='decoder3')(decoded2)
+    else:
+        decoded3 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
                       kernel_initializer=initializer, name='decoder3')(decoded2)
 
     if 'unet' in data_type:
@@ -402,8 +422,12 @@ def build_conv_with_fusion_skip(data_type='WithSpikes',
     # decoded = LayerNormalization(axis=[2])(Dropout(0.3)(decoded)) #third
 
     if 'unet' in data_type:
-        decoded4 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
-                          kernel_initializer=initializer, name='decoder4')(decoded3)
+        if 'separable' in data_type:
+            decoded4 = SeparableConv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+                     depthwise_initializer=initializer, pointwise_initializer=initializer, name='decoder4')(decoded3)
+        else:
+            decoded4 = Conv1D(filters[2], kernel_size, strides=1, activation=activation_decode, padding=padding,
+                         kernel_initializer=initializer, name='decoder4')(decoded3)
 
         decoded4 = Concatenate(axis=-1)([decoded4, sound1])
         decoded4 = Dropout(0.3)(LeakyReLU()(LayerNormalization(axis=[2])(decoded4)))  # first version

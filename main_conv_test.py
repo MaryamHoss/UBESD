@@ -5,13 +5,13 @@ sys.path.append('../')
 
 ## For Luca: please put every thing you want to add after this line 
 from GenericTools.KerasTools.esoteric_optimizers.AdaBelief import AdaBelief
-from TrialsOfNeuralVocalRecon.data_processing.data_collection import getData,getData_mes
+from TrialsOfNeuralVocalRecon.data_processing.data_collection import getData, getData_mes, getData_kuleuven
 
 import pandas as pd
 from GenericTools.StayOrganizedTools.VeryCustomSacred import CustomExperiment, ChooseGPU
 from GenericTools.StayOrganizedTools.utils import timeStructured
 from TrialsOfNeuralVocalRecon.neural_models import build_model
-from TrialsOfNeuralVocalRecon.tools.plotting import save_wav,evaluations_to_violins
+from TrialsOfNeuralVocalRecon.tools.plotting import save_wav, evaluations_to_violins, one_plot_test
 from tensorflow.keras.optimizers import Adam
 from TrialsOfNeuralVocalRecon.tools.calculate_intelligibility import find_intel
 from TrialsOfNeuralVocalRecon.tools.utils.losses import *
@@ -38,8 +38,6 @@ def cfg():
     learning_rate = 1e-05
     seed = 14
 
-
-
     fusion_type = 'denoising_eeg_FBCWithSpikes_FiLM_v1_new_convblock:cnrd_mmfilter:5:100_nconvs:3'
     exp_type = 'WithSpikes'
 
@@ -51,14 +49,12 @@ def cfg():
     exp_folder = '2021-04-11--12-36-08--8227-mc-prediction_'
     if 'WithSpikes' in exp_type:
         load_model = os.path.abspath(os.path.join(*[CDIR, 'experiments', exp_folder, 'trained_models',
-                                                'model_weights_WithSpikes_predict.h5']))  # wether we start from a previously trained model
+                                                    'model_weights_WithSpikes_predict.h5']))  # wether we start from a previously trained model
     else:
         load_model = os.path.abspath(os.path.join(*[CDIR, 'experiments', exp_folder, 'trained_models',
-                                                'model_weights_noSpikes_predict.h5']))  # wether we start from a previously trained model
+                                                    'model_weights_noSpikes_predict.h5']))  # wether we start from a previously trained model
 
-               
-    
-    n_channels = 64 if 'mes' in data_type else 128
+    n_channels = 64 if 'mes' in data_type else 64 if 'kuleuven' in data_type else 1 if 'clean_comp' in data_type else 26 if 'reduced_ch' in data_type else 128
     testing = True
     optimizer = 'cwAdaBelief'  # adam #adablief
     activation = 'relu'  # sanke
@@ -66,9 +62,9 @@ def cfg():
     sound_len_test = 1313280
     spike_len_test = 3840
 
-    downsample_sound_by = 1 if 'mes' in data_type else 3#3  # choices: 3 and 10
-    sound_len = 32000 if 'mes' in data_type else 87552  # 87552  # 87040 for downsample by 10 #87552 for downsample sound by=3  # 87552  # insteead of88200  #2626560#2610860
-    fs = 8000 if 'mes' in data_type else 44100/downsample_sound_by
+    downsample_sound_by = 1 if 'mes' in data_type else 1 if 'kuleuven' in data_type else 3  # 3  # choices: 3 and 10
+    sound_len = 32000 if 'mes' in data_type else 16000 if 'kuleuven' in data_type else 87552  # 87552  # 87040 for downsample by 10 #87552 for downsample sound by=3  # 87552  # insteead of88200  #2626560#2610860
+    fs = 8000 if 'mes' in data_type else 8000 if 'kuleuven' in data_type else 44100 / downsample_sound_by
     spike_len = 256  # 7680 # 7679
 
 
@@ -127,10 +123,12 @@ def main(exp_type, data_type,
         optimizer = Adam(learning_rate=learning_rate)
 
     model.compile(optimizer=optimizer, loss=si_sdr_loss, metrics=[si_sdr_loss, 'mse'])  # dummy_loss
-    
+
     print('loading model')
 
     if not load_model is False:
+        # model.load_weights(load_model,by_name=True,skip_mismatch=True)
+
         print('Loading weights from {}'.format(load_model))
         if "noiseinput" in data_type:
             model.load_weights(load_model)
@@ -156,17 +154,30 @@ def main(exp_type, data_type,
         print('testing the model')
         print('\n loading the test data')
         if 'mes' in data_type:
-        
+
             generators = getData_mes(sound_shape=(sound_len, 1),
-                         spike_shape=(spike_len, n_channels),
-                         sound_shape_test=(sound_len_test, 1),
-                         spike_shape_test=(spike_len_test, n_channels),
-                         data_type=data_type,
-                         batch_size=1,
-                         downsample_sound_by=downsample_sound_by,
-                         test_type=test_type)
+                                     spike_shape=(spike_len, n_channels),
+                                     sound_shape_test=(sound_len_test, 1),
+                                     spike_shape_test=(spike_len_test, n_channels),
+                                     data_type=data_type,
+                                     batch_size=1,
+                                     downsample_sound_by=downsample_sound_by,
+                                     test_type=test_type)
+
+        elif 'kuleuven' in data_type:
+
+            generators = getData_kuleuven(sound_shape=(sound_len, 1),
+                                          spike_shape=(spike_len, n_channels),
+                                          sound_shape_test=(sound_len_test, 1),
+                                          spike_shape_test=(spike_len_test, n_channels),
+                                          data_type=data_type,
+                                          batch_size=1,
+                                          downsample_sound_by=downsample_sound_by,
+                                          test_type=test_type)
+
+
         else:
-            
+
             generators = getData(sound_shape=(sound_len_test, 1),
                                  spike_shape=(spike_len_test, n_channels),
                                  sound_shape_test=(sound_len_test, 1),
@@ -175,20 +186,22 @@ def main(exp_type, data_type,
                                  batch_size=1,
                                  downsample_sound_by=downsample_sound_by,
                                  test_type=test_type)
-        del generators['train']#, generators['val']
-        prediction_metrics = ['si-sdr', 'stoi', 'estoi' , 'pesq']
+        del generators['train']  # , generators['val']
+        prediction_metrics = ['si-sdr', 'stoi', 'estoi', 'pesq']
         noisy_metrics = [m + '_noisy' for m in prediction_metrics]
 
         inference_time = []
         if 'mes' in data_type:
-            subjects = [None] + list(range(23,45))#list(range(34)) #[None] + list(range(34))  # None corresponds to all the subjects mixed
+            subjects = [None] + list(range(23,
+                                           45))  # list(range(34)) #[None] + list(range(34))  # None corresponds to all the subjects mixed
+        elif 'kuleuven' in data_type:
+            subjects = [
+                None]  # + list(range(1,16))#list(range(34)) #[None] + list(range(34))  # None corresponds to all the subjects mixed
         else:
-            subjects = [None] + list(range(34)) 
-            
-        
+            subjects = [None] + list(range(34))
 
-        for generator_type in ['test', 'test_unattended']:# ['test']:
-            
+        for generator_type in ['test']:  # , 'test_unattended']:# ['test']:
+
             print(generator_type)
             gt = generators[generator_type]
             all_subjects_evaluations = {}
@@ -203,9 +216,9 @@ def main(exp_type, data_type,
                     for batch_sample, b in tqdm(enumerate(gt)):
                         print('batch_sample {} for subject {}'.format(batch_sample, subject))
                         if 'WithSpikes' in data_type:
-                            noisy_snd, clean = b[0][0], b[0][2]  
+                            noisy_snd, clean = b[0][0], b[0][2]
                         else:
-                            noisy_snd, clean = b[0][0], b[0][1] 
+                            noisy_snd, clean = b[0][0], b[0][1]
                         intel_list, intel_list_noisy = [], []
                         inf_start_s = time.time()
                         print('predicting')
@@ -218,18 +231,18 @@ def main(exp_type, data_type,
                         prediction.append(pred)
                         prediction_concat = np.concatenate(prediction, axis=0)
                         # uncomment later
-                        if not subject is None and not 'mes' in data_type:
-                            print('saving sound')
-                            save_wav(pred, noisy_snd, clean, exp_type, batch_sample, fs, images_dir, subject,generator_type)
-                        # fig_path = os.path.join(
-                        # images_dir,
-                        # 'prediction_b{}_s{}_g{}.png'.format(batch_sample, subject, generator_type))
-                        # print('saving plot')
-                        # one_plot_test(pred, clean, noisy_snd, exp_type, '', fig_path)
+                        #if not subject is None and not 'mes' in data_type:
+                            #print('saving sound')
+                            #save_wav(pred, noisy_snd, clean, exp_type, batch_sample, fs, images_dir, subject,
+                                     #generator_type)
+                        fig_path = os.path.join(
+                            images_dir,
+                            'prediction_b{}_s{}_g{}.png'.format(batch_sample, subject, generator_type))
+                        print('saving plot')
+                        one_plot_test(pred, clean, noisy_snd, exp_type, '', fig_path)
 
                         print('finding metrics')
                         for m in prediction_metrics:
-                            
                             print('     ', m)
                             pred_m = find_intel(clean, pred, metric=m)
                             intel_list.append(pred_m)
@@ -292,10 +305,10 @@ def main(exp_type, data_type,
             noisy_metrics = [m + '_noisy' for m in prediction_metrics]
             generator_type='test'
             '''
-            #evaluations_to_violins({k: v[noisy_metrics] for k, v in all_subjects_evaluations.items()}, images_dir,
-              #                     generator_type + 'noisy')
-            #evaluations_to_violins({k: v[prediction_metrics] for k, v in all_subjects_evaluations.items()}, images_dir,
-             #                      generator_type + '')
+            # evaluations_to_violins({k: v[noisy_metrics] for k, v in all_subjects_evaluations.items()}, images_dir,
+            #                     generator_type + 'noisy')
+            # evaluations_to_violins({k: v[prediction_metrics] for k, v in all_subjects_evaluations.items()}, images_dir,
+            #                      generator_type + '')
 
     shutil.make_archive(ex.observers[0].basedir, 'zip', exp_dir)
 

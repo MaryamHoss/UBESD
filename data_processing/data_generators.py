@@ -133,7 +133,7 @@ class Prediction_Generator(BaseGenerator):
         samples = self.samples_of_interest[batch_start:batch_stop]
         input_batch_first = self.input_file_first[self.input_1_key][samples, :self.input_len_1]  # and load them
         input_batch_second = self.input_file_second[self.input_2_key][samples, :self.input_len_2]
-        if 'mes' in data_type:
+        if 'mes' in self.data_type:
             #output_batch = self.output_file[self.output_key][samples, 1:self.output_len + 1]
             output_batch = self.output_file[self.output_key][samples, :self.output_len]
         else:

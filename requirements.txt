@@ -1,7 +1,7 @@
-tensorflow 2.3.0
+tensorflow 2.4.1
 dataclasses
 pesq
-numpy 1.18.4
+numpy 1.19.5
 tqdm
 matplotlib 3.2.1 or in Cedar 3.0.3
 h5py 2.10.0

@@ -10,11 +10,11 @@ import pandas as pd
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from UBESD.tools.plot_tools import plot_history
 from UBESD.tools.VeryCustomSacred import CustomExperiment, ChooseGPU
-from UBESD.tools.utils import timeStructured
+from UBESD.tools.utilities import timeStructured, setReproducible
 
 from UBESD.neural_models import build_model
 from UBESD.tools.plotting import one_plot_test
-from UBESD.data_processing.data_collection import getData,getData_mes
+from UBESD.data_processing.data_collection import getData,getData_mes,getData_kuleuven
 from tensorflow.keras.optimizers import Adam
 from UBESD.tools.calculate_intelligibility import find_intel
 from UBESD.tools.utils.losses import *
@@ -23,8 +23,6 @@ import pickle
 import tensorflow as tf
 
 tf.compat.v1.disable_eager_execution()
-
-from UBESD.tools.utils import setReproducible
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
@@ -39,45 +37,36 @@ def cfg():
     learning_rate = 1e-05
     seed = 14
     epochs = 2
-    batch_size = 8 
-
+    batch_size = 8
+    kernel_size=25
     
-    # _FiLM_v1_soundencoderresnet_convblock:cnrd_mmfilter:64:64_dilation:_nconvs:4
-    # _FiLM_v1_orthogonal_multirresolution_convblock:crnd_contrastive_noiseinput_dilation:3_mmfilter:1:5_nconvs:2
-    # performer_concatenate_mmfilter:4:4_nconvs:2
-    fusion_type = '_FiLM_v1_initializer:orthogonal_unet_convblock:cnrd_mmfilter:64:64_dilation:_nconvs:4'
-    fusion_type='_FiLM_v1_initializer:BiGamma_unet_convblock:cnrd_mmfilter:64:64_dilation:_nconvs:4_voice_preprocessing'
-    ## choices: 1) _concatenate 2) _FiLM_v1_orthogonal_noiseinput 3) _FiLM_v2 4) _FiLM_v3 5) transformer_classic
-    # 5) _FiLM_v4 6) _choice 7) _add 8) _transformer_classic 9) _transformer_parallel 10) _transformer_stairs 11)'' for no spikes
-    # 11) _transformer_crossed_stairs '_FiLM_v1_orthogonal_multirresolution_convblock:crnd_contrastive_noiseinput'
-    exp_type = 'WithSpikes'  # choices: 1) noSpikes 2) WithSpikes 3) OnlySpikes
-    # fusion_type = fusion_type if not exp_type == 'noSpike' else ''
-    input_type = 'random_eeg_'  # choices: 1) denoising_eeg_ 2) denoising_eeg_FBC_ 3) real_prediction_ 4) random_eeg_
-    # 5) real_reconstruction_ 6) denoising_ 7) cpc_prediction_ 8) real_prediction_eeg_ 9) denoising_eeg_RAW_
-    # 10) kuleuven_denoising_eeg_11) small_eeg_ 12)
-    data_type = input_type + exp_type + fusion_type
-    test_type = 'speaker_independent'
-    exp_folder = ''
-    if 'WithSpikes' in exp_type:
-        load_model = os.path.abspath(os.path.join(*[CDIR, 'experiments', exp_folder, 'trained_models',
-                                                'model_weights_WithSpikes_predict.h5']))  # wether we start from a previously trained model
-    else:
-        load_model = os.path.abspath(os.path.join(*[CDIR, 'experiments', exp_folder, 'trained_models',
-                                                'model_weights_noSpikes_predict.h5']))  # wether we start from a previously trained model
 
-    n_channels = 64 if 'mes' in data_type else 128
-    testing = False
+    fusion_type = '_FiLM_v1_initializer:orthogonal_unet_convblock:cnrd_mmfilter:64:64_dilation:_nconvs:4'
+    ## choices: 1) _concatenate 2) _FiLM_v1_orthogonal 3) _FiLM_v2 4) _FiLM_v3 5) _FiLM_v4
+    # 6) _choice 7) _add 11)'' for no spikes
+
+    exp_type = 'WithSpikes'  # choices: 1) noSpikes 2) WithSpikes
+
+    input_type = 'denoising_eeg_'  # choices: 1) denoising_eeg_ 2) denoising_eeg_FBC_
+    # 9) denoising_eeg_RAW_ # 10) kuleuven_denoising_eeg_
+    data_type = input_type + exp_type + fusion_type
+    prev=False
+    if prev=True:
+        exp_folder = '' #write the address to the previous model
+        if 'WithSpikes' in exp_type:
+            load_model = os.path.abspath(os.path.join(*[CDIR, 'experiments', exp_folder, 'trained_models',
+                                                'model_weights_WithSpikes_predict.h5']))
+        else:
+            load_model = os.path.abspath(os.path.join(*[CDIR, 'experiments', exp_folder, 'trained_models',
+                                                'model_weights_noSpikes_predict.h5']))
+
+    n_channels = 64 if 'mes' in data_type else 64 if 'kuleuven' in data_type else 26 if 'reduced_ch' in data_type else 128
+
     optimizer = 'cwAdaBelief'  # adam #adablief
-    activation = 'relu'  # sanke
-    batch_size_test = 70  # 70 for speaker specific #118 speaker independent
-    sound_len_test = 1313280
-    spike_len_test = 3840
-    batch_start = 4
-    batch_stop = 33
-    batch_step = 4
-    downsample_sound_by = 1 if 'mes' in data_type else 3#3  # choices: 3 and 10
-    sound_len = 32000 if 'mes' in data_type else 87552  # 87552  # 87040 for downsample by 10 #87552 for downsample sound by=3  # 87552  # insteead of88200  #2626560#2610860
-    fs = 8000 if 'mes' in data_type else 44100/downsample_sound_by
+    activation = 'relu'
+    downsample_sound_by = 1 if 'mes' in data_type else 1 if 'kuleuven' in data_type else 3#3  # choices: 3 and 10
+    sound_len = 32000 if 'mes' in data_type else 16000 if 'kuleuven' in data_type else 87552  # 87552  # 87040 for downsample by 10 #87552 for downsample sound by=3  # 87552  # insteead of88200  #2626560#2610860
+    fs = 8000 if 'mes' in data_type else 8000 if 'kuleuven' in data_type else 44100/downsample_sound_by
     spike_len = 256  # 7680 # 7679
     hours=33
 
@@ -85,8 +74,8 @@ def cfg():
 def get_callbacks(hours,path_best_model, history_path, data_type, images_dir):
     checkpoint = ModelCheckpoint(path_best_model, monitor='val_loss', verbose=1, save_best_only=True)
     #save_weights_only=True)
-    earlystopping = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=5, verbose=1, cooldown=1)
+    earlystopping = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=20,min_delta=0.01)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=3, verbose=1, cooldown=1)
     csvlogger = tf.keras.callbacks.CSVLogger(history_path),
 
     callbacks = [
@@ -95,11 +84,14 @@ def get_callbacks(hours,path_best_model, history_path, data_type, images_dir):
     ]  # , tensorboard]
 
 
+    return callbacks
+
+
 @ex.automain
 def main(exp_type, data_type,
          learning_rate, epochs, sound_len, spike_len, batch_size, load_model,
          n_channels, downsample_sound_by, GPU, fs, testing, optimizer, activation, test_type, batch_size_test,
-         sound_len_test, spike_len_test, batch_start, batch_stop, batch_step, seed,hours):
+         sound_len_test, spike_len_test, batch_start, batch_stop, batch_step, seed,hours,kernel_size):
     exp_dir = os.path.join(*[CDIR, ex.observers[0].basedir])
     images_dir = os.path.join(*[exp_dir, 'images'])
     text_dir = os.path.join(*[exp_dir, 'text'])
@@ -114,6 +106,7 @@ def main(exp_type, data_type,
     setReproducible(seed)
 
     model = build_model(learning_rate=learning_rate,
+                        kernel_size=kernel_size,
                         sound_shape=(None, 1),
                         spike_shape=(None, n_channels),
                         downsample_sound_by=downsample_sound_by,
@@ -227,6 +220,23 @@ def main(exp_type, data_type,
                   epochs=epochs,
                   validation_data=generators['test'],
                   callbacks=callbacks)
+        
+        
+    elif 'kuleuven' in data_type:
+    
+        generators = getData_kuleuven(sound_shape=(sound_len, 1),
+                     spike_shape=(spike_len, n_channels),
+                     sound_shape_test=(sound_len_test, 1),
+                     spike_shape_test=(spike_len_test, n_channels),
+                     data_type=data_type,
+                     batch_size=batch_size,
+                     downsample_sound_by=downsample_sound_by,
+                     test_type=test_type)
+    
+        model.fit(generators['train'],
+                  epochs=epochs,
+                  validation_data=generators['test'],
+                  callbacks=callbacks)    
         
     else:
         generators = getData(sound_shape=(sound_len, 1),

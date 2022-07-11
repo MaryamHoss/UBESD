@@ -5,7 +5,8 @@ from scipy.io import wavfile
 from scipy.stats import mannwhitneyu
 
 from GenericTools.StayOrganizedTools.utils import timeStructured
-
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.serif"] = "Times New Roman"
 
 def plot_predictions(sound2sound, spike2sound, generator_test_snd2snd, generator_test_spk2snd, ex):
     # test spike to sound
@@ -223,13 +224,21 @@ def adjacent_values(vals, q1, q3):
 
 
 def set_axis_style(ax, labels):
+   # plt.rc('font',**{'family':'serif','serif':['Times']})
     ax.get_xaxis().set_tick_params(direction='out')
     ax.xaxis.set_ticks_position('bottom')
     ax.set_xticks(np.arange(1, len(labels) + 1))
     # ax.xaxis.xticks(rotation=90)
-    ax.set_xticklabels(labels)# rotation=25)
+    ax.set_xticklabels(labels, size=13)# rotation=25)
     ax.set_xlim(0.25, len(labels) + 0.75)
-    ax.set_ylim(-10,20)
+    ax.set_yticks(np.array([1,1.5,2,2.5]))#([4,6,8,10]))
+    ax.tick_params('y',labelsize=15)
+    #ax.rc('xtick', labelsize=20) 
+    #ax.set_ylim(-10,20)
+    #plt.grid()
+    plt.rcParams["font.family"] = "serif"
+    #plt.rcParams["font.serif"] = "Times New Roman"
+    #plt.rcParams["font.size"]=6
     # ax.set_xlabel('Sample name')
     # plt.xticks(rotation=3)
 
@@ -318,7 +327,7 @@ def evaluations_to_violins(all_exps, images_folder, name_suffix='',all_subjects=
         for tick, label in zip(range(len(data)), ax.get_xticklabels()):
             ax.text(pos[tick], 1.01, upper_labels[tick],
                     transform=ax.get_xaxis_transform(),
-                    horizontalalignment='center', fontsize=12, rotation=45) #, rotation='vertical')  # ,
+                    horizontalalignment='center', fontsize=15)#,rotation=45) #, rotation='vertical')  # ,
         #                    fontweight='bold')
 
         maxs_data = np.array([max(d) for d in data])
