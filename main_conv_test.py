@@ -3,26 +3,24 @@ from tqdm import tqdm
 
 sys.path.append('../')
 
-## For Luca: please put every thing you want to add after this line 
-from GenericTools.KerasTools.esoteric_optimizers.AdaBelief import AdaBelief
-from TrialsOfNeuralVocalRecon.data_processing.data_collection import getData, getData_mes, getData_kuleuven
+from UBESD.tools.AdaBelief import AdaBelief
+from UBESD.data_processing.data_collection import getData, getData_mes, getData_kuleuven
 
 import pandas as pd
-from GenericTools.StayOrganizedTools.VeryCustomSacred import CustomExperiment, ChooseGPU
-from GenericTools.StayOrganizedTools.utils import timeStructured
-from TrialsOfNeuralVocalRecon.neural_models import build_model
-from TrialsOfNeuralVocalRecon.tools.plotting import save_wav, evaluations_to_violins, one_plot_test
+from UBESD.tools.VeryCustomSacred import CustomExperiment, ChooseGPU
+from UBESD.tools.utililities import timeStructured
+from UBESD.neural_models import build_model
+from UBESD.tools.plotting import save_wav, evaluations_to_violins, one_plot_test
 from tensorflow.keras.optimizers import Adam
-from TrialsOfNeuralVocalRecon.tools.calculate_intelligibility import find_intel
-from TrialsOfNeuralVocalRecon.tools.utils.losses import *
+from UBESD.tools.calculate_intelligibility import find_intel
+from UBESD.tools.utils.losses import *
 from tensorflow.keras.models import load_model as lm
 import pickle
-from GenericTools.KerasTools.convenience_operations import snake
 import numpy as np
 
 tf.compat.v1.enable_eager_execution()
 
-from GenericTools.StayOrganizedTools.utils import setReproducible
+from UBESD.tools.utilities import setReproducible
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
@@ -31,7 +29,6 @@ random_string = ''.join([str(r) for r in np.random.choice(10, 4)])
 ex = CustomExperiment(random_string + '-mc-test', base_dir=CDIR, seed=14)
 
 
-# CDIR='C:/Users/hoss3301/work/TrialsOfNeuralVocalRecon'
 @ex.config
 def cfg():
     GPU = 0

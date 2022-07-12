@@ -1,7 +1,6 @@
-import  mne, os, h5py, random
+import mne, os, h5py, random
 import numpy as np
 from scipy.io.wavfile import read as read_wav
-# from tqdm import tqdm
 import tensorflow as tf
 import sys
 

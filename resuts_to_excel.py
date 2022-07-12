@@ -9,12 +9,12 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 
 sys.path.append('../')
-from GenericTools.StayOrganizedTools.utils import get_random_string
+from UBESD.tools.utilities import get_random_string
 
-from TrialsOfNeuralVocalRecon.tools.plotting import evaluations_to_violins
+from UBESD.tools.plotting import evaluations_to_violins
 
-from GenericTools.StayOrganizedTools.unzip import unzip_good_exps
-from GenericTools.StayOrganizedTools.plot_tricks import large_num_to_reasonable_string
+from UBESD.tools.unzip import unzip_good_exps
+from UBESD.tools.plot_tricks import large_num_to_reasonable_string
 
 pd.set_option('display.max_columns', None)
 pd.set_option('max_colwidth', 1)
@@ -22,10 +22,8 @@ pd.set_option('precision', 3)
 pd.options.display.width = 500
 # pd.options.display.max_colwidth = 16
 
-#CDIR = os.path.dirname(os.path.realpath(__file__))
-CDIR='C:/Users/hoss3301/work/TrialsOfNeuralVocalRecon'
+CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(*[CDIR, 'experiments'])
-# GEXPERIMENTS = r'D:/work/stochastic_spiking/good_experiments/2021-01-05--ptb-small-noise-good'
 GEXPERIMENTS = os.path.join(*[CDIR, 'good_experiments'])
 
 DATA_path = os.path.join(*[CDIR, 'data', 'kuleuven'])

@@ -8,9 +8,9 @@ import tensorflow.keras.backend as K
 import numpy as np
 import tensorflow as tf
 import functools
-from TrialsOfNeuralVocalRecon.tools.utils.OBM import OBM as oooooo
-import TrialsOfNeuralVocalRecon.tools.utils.pmsqe as pmsqe
-import TrialsOfNeuralVocalRecon.tools.utils.perceptual_constants as perceptual_constants
+from UBESD.tools.utils.OBM import OBM
+import UBESD.tools.utils.pmsqe as pmsqe
+import UBESD.tools.utils.perceptual_constants as perceptual_constants
 
 tf.keras.backend.set_floatx('float32')
 
@@ -63,30 +63,6 @@ def log10(x):
     denominator = tf_log(tf.constant(10, dtype=numerator.dtype))
     return numerator / denominator
 
-
-'''
-""" This is Luca's version. it was wrong?"""
-def random_segSNR_loss(fs=15000):
-    # proper definition: Speech enhancement using super-Gaussian speech models and noncausal a priori SNR estimation
-    # half window of 32ms, N in the paper, eq (27)
-    w = tf.cast(32/1000*fs/2, tf.int32)
-
-    def rsSNR(y_true, y_pred):
-        sound_len = tf.shape(y_true)[1]
-        nw = tf.cast(sound_len/w, tf.int32)
-        random_downsampling = tf.random.uniform(shape=[], minval=1, maxval=nw, dtype=tf.int32)
-        print(random_downsampling)
-        ds_true = y_true[:, ::random_downsampling*w]
-        ds_pred = y_pred[:, ::random_downsampling*w]
-        print(y_pred.shape)
-        print(ds_pred.shape)
-        num = tf.reduce_sum(tf.square(ds_pred), axis=1)
-        den = tf.reduce_sum(tf.square(ds_pred - ds_true), axis=1)
-        loss = 10 * log10(num) - 10 * log10(den)
-        return tf.reduce_mean(loss)
-
-    return rsSNR
-'''
 
 def threshold(x):
     x_max=tf.math.maximum(x,-20)
@@ -221,7 +197,7 @@ def estoi_loss(batch_size=8, nbf=200, fs=10000, nfft=512,
         M = int(nbf - (N - 1))  # number of temporal envelope vectors
         epsilon = 1e-9  # To avoid divide by zero
 
-        OBM, _ = thirdoct(fs, nfft, J, min_freq)
+        O, _ = thirdoct(fs, nfft, J, min_freq)
 
         y_true = tf.squeeze(y_true, axis=-1)
         y_pred = tf.squeeze(y_pred, axis=-1)
@@ -230,8 +206,7 @@ def estoi_loss(batch_size=8, nbf=200, fs=10000, nfft=512,
         stft_true = tf_signal.stft(y_true, 256, 128, 512, window_fn, pad_end=False)
         stft_pred = tf_signal.stft(y_pred, 256, 128, 512, window_fn, pad_end=False)
 
-        OBM1 = tf.convert_to_tensor(OBM)  # oooooo   Luca
-        # OBM1 = tf.convert_to_tensor(oooooo) # Maryam
+        OBM1 = tf.convert_to_tensor(O)
         OBM1 = K.tile(OBM1, [y_pred_shape[0], 1, ])
         #        OBM1 = K.reshape(OBM1, [y_pred_shape[0], J, -1, ])
         OBM1 = K.reshape(OBM1, [y_pred_shape[0], J, 257, ])
@@ -277,11 +252,10 @@ def stoi_loss(batch_size=8, nbf=200):
         fs = 10000  # 97656.25
         nfft = 512  # 256
         min_freq = 150  # 1150  # 1050
-        print(oooooo.shape)
-        OBM, _ = thirdoct(fs, nfft, J, min_freq)
-        print(OBM.shape)
+        O, _ = thirdoct(fs, nfft, J, min_freq)
+        print(O.shape)
 
-        OBM1 = tf.convert_to_tensor(oooooo)
+        OBM1 = tf.convert_to_tensor(O)
         OBM1 = K.tile(OBM1, [y_pred_shape[0], 1, ])
         OBM1 = K.reshape(OBM1, [y_pred_shape[0], 15, 257, ])
 
@@ -367,18 +341,6 @@ def pmsqe_log_mse_loss(batch_size=8):
 
     return pmsqe_log_mse_loss_inner
 
-
-def test_1():
-    batch_size = 16
-    sound_len = 300
-    y_true = np.random.randn(batch_size, sound_len, 1).astype(np.float32)
-    y_pred = np.random.randn(batch_size, sound_len, 1).astype(np.float32)
-    our_sdr = si_sdr_loss(y_true, y_true)
-    mesgarani_sdr = calc_sdr(y_true, y_true)
-
-    print('our_sdr:       ', our_sdr)
-    print('mesgarani_sdr: ', mesgarani_sdr)
-    print('mesgarani_sdr: ', np.mean(mesgarani_sdr))
 
 
 if __name__ == '__main__':

@@ -10,7 +10,6 @@ def build_model(*args, **kwargs):
 
     else:
 
-        # model = build_conv_with_fusion_big(*args, **kwargs)
         model = build_conv_with_fusion(*args, **kwargs)
 
     model.summary()
