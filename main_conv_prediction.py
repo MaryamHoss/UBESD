@@ -1,5 +1,4 @@
 import os, sys, shutil, json, time, copy
-from datetime import timedelta
 
 sys.path.append('../')
 
@@ -13,10 +12,8 @@ from UBESD.tools.VeryCustomSacred import CustomExperiment, ChooseGPU
 from UBESD.tools.utilities import timeStructured, setReproducible
 
 from UBESD.neural_models import build_model
-from UBESD.tools.plotting import one_plot_test
 from UBESD.data_processing.data_collection import getData,getData_mes,getData_kuleuven
 from tensorflow.keras.optimizers import Adam
-from UBESD.tools.calculate_intelligibility import find_intel
 from UBESD.tools.utils.losses import *
 import tensorflow.keras.backend as K
 import pickle
