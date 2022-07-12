@@ -1,18 +1,8 @@
 from tensorflow.keras.layers import *
 
-from GenericTools.KerasTools.configuration_performer_attention import PerformerAttentionConfig
-from GenericTools.KerasTools.modeling_tf_performer_attention import TFPerformerAttention
-
 import itertools
 
 
-def prime_factors(n):
-    for i in itertools.chain([2], itertools.count(3, 2)):
-        if n <= 1:
-            break
-        while n % i == 0:
-            n //= i
-            yield i
 
 
 def FiLM_Fusion(size, data_type='sum', initializer='orthogonal', n_filters=0):
@@ -26,7 +16,6 @@ def FiLM_Fusion(size, data_type='sum', initializer='orthogonal', n_filters=0):
             beta_spk = Conv1D(size, 3, padding='same', kernel_initializer=initializer)(sound)
             gamma_spk = Conv1D(size, 3, padding='same', kernel_initializer=initializer)(sound)
 
-            # changes: 20-8-20 instead of + I made a layer with ADD
             # sound = Multiply()([sound, gamma_snd]) + beta_snd
             sound = Add()([Multiply()([sound, gamma_snd]), beta_snd])
             # spikes = Multiply()([spikes, gamma_spk]) + beta_spk
@@ -86,24 +75,7 @@ def FiLM_Fusion(size, data_type='sum', initializer='orthogonal', n_filters=0):
             # FiLM ends ---------
 
             layer = [sound, spikes]       
-            
-            
 
-        elif 'performer' in data_type:
-            config = PerformerAttentionConfig()
-            p = list(prime_factors(n_filters))
-            config.d_model = n_filters
-            config.num_heads = 1 if (p[-1] == p[0] and len(p) == 1) else p[-1]
-            config.causal = True
-            config.use_orthogonal_features = True
-
-            performer_sound = TFPerformerAttention(config)
-            query, key = spikes, sound
-            per_sound, = performer_sound([query, key, key], mask=None, head_mask=None, output_attentions=False)
-            performer_spike = TFPerformerAttention(config)
-            query, key = sound, spikes
-            per_spike, = performer_spike([query, key, key], mask=None, head_mask=None, output_attentions=False)
-            layer = [per_sound, per_spike]
         else:
             layer = inputs
         return layer
@@ -117,9 +89,6 @@ def Fusion(data_type='Add'):
 
         if 'noSpike' in data_type:
             layer = sound
-
-        elif 'OnlySpike' in data_type:
-            layer = spikes
 
         elif '_add' in data_type:
             layer = Add()(inputs)

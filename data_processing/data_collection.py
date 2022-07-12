@@ -1,9 +1,7 @@
 import time, os, itertools
-# import resampy
-# import TrialsOfNeuralVocalRecon.models.yamnet.params as yamnet_params
-# import TrialsOfNeuralVocalRecon.models.yamnet.yamnet as yamnet_model
 
-from TrialsOfNeuralVocalRecon.data_processing.data_generators import Prediction_Generator, Random_Generator
+
+from UBESD.data_processing.data_generators import Prediction_Generator
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATADIR = os.path.abspath(os.path.join(*[CDIR, '..', 'data']))
@@ -31,9 +29,6 @@ def getDataPaths(data_type, test_type):
 
     if 'RAW' in data_type:
         eeg_folder = eeg_folder.replace('eeg', 'raw_eeg')
-        
-    if 'clean_comp' in data_type:
-        eeg_folder = eeg_folder.replace('eeg', 'clean_comp')
 
     if 'speaker_specific' in test_type:
         eeg_folder += '/speaker_specific'
@@ -52,14 +47,8 @@ def getDataPaths(data_type, test_type):
         else:
             EEG_h5_DIR = os.path.abspath(os.path.join(*[DATADIR, 'Cocktail_Party', 'Normalized']))
 
-        if 'voice_preprocessing' in data_type:
-            DATADIR = os.path.abspath(os.path.join(*[CDIR, '..', 'data', 'common_voice', 'voices_h5s']))
-            data_paths['in1_{}'.format(set)] = os.path.join(DATADIR, 'voices_{}.h5'.format(set))
-            data_paths['in2_{}'.format(set)] = os.path.join(DATADIR, 'voices_{}.h5'.format(set))
-            data_paths['out_{}'.format(set)] = os.path.join(DATADIR, 'voices_{}.h5'.format(set))
-            data_paths['out_{}_unattended'.format(set)] = os.path.join(DATADIR, 'voices_{}.h5'.format(set))
 
-        elif 'eeg' in data_type:
+        if 'eeg' in data_type:
             if 'small_eeg_' in data_type:
                 data_paths['in1_{}'.format(set)] = os.path.join(
                     *[EEG_h5_DIR, '2s', 'eeg', 'noisy_{}.h5'.format(set)])
@@ -72,18 +61,8 @@ def getDataPaths(data_type, test_type):
 
             elif 'denoising' in data_type:
                 
-                if 'clean_comp' in data_type:
-                    data_paths['in1_{}'.format(set)] = os.path.join(
-                        *[EEG_h5_DIR, time_folder, eeg_folder, 'noisy_{}.h5'.format(set)])
-                    data_paths['in2_{}'.format(set)] = os.path.join(
-                        *[EEG_h5_DIR, time_folder, eeg_folder, 'clean_{}.h5'.format(set)])
-                    data_paths['out_{}'.format(set)] = os.path.join(
-                        *[EEG_h5_DIR, time_folder, eeg_folder, 'clean_{}.h5'.format(set)])
-                    data_paths['out_{}_unattended'.format(set)] = os.path.join(
-                        *[EEG_h5_DIR, time_folder, eeg_folder, 'unattended_{}.h5'.format(set)])
-                    
-                    print(data_paths['in1_{}'.format(set)])
-                elif 'filtered' in data_type:
+
+                if 'filtered' in data_type:
 
                     data_paths['in1_{}'.format(set)] = os.path.join(
                         *[EEG_h5_DIR, time_folder, eeg_folder, 'noisy_{}.h5'.format(set)])

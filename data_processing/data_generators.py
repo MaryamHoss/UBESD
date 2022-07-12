@@ -27,8 +27,6 @@ class BaseGenerator(Sequence):
             return [input_batch_first, output_batch], output_batch
         elif 'WithSpikes' in self.data_type:
             return [input_batch_first, input_batch_second, output_batch], output_batch
-        elif 'OnlySpikes' in self.data_type:
-            return [input_batch_second, output_batch], output_batch
         else:
             raise NotImplementedError
 
@@ -134,7 +132,7 @@ class Prediction_Generator(BaseGenerator):
         input_batch_first = self.input_file_first[self.input_1_key][samples, :self.input_len_1]  # and load them
         input_batch_second = self.input_file_second[self.input_2_key][samples, :self.input_len_2]
         if 'mes' in self.data_type:
-            #output_batch = self.output_file[self.output_key][samples, 1:self.output_len + 1]
+
             output_batch = self.output_file[self.output_key][samples, :self.output_len]
         else:
             output_batch = self.output_file[self.output_key][samples, 1:self.output_len + 1]
@@ -143,41 +141,6 @@ class Prediction_Generator(BaseGenerator):
         input_batch_first = input_batch_first[:, ::self.downsample_sound_by]
         input_batch_second = np.repeat(input_batch_second, self.ratio_sound_spike, 1)
         output_batch = output_batch[:, ::self.downsample_sound_by]
-        if 'voice_preprocessing' in self.data_type:
-            input_batch_second = input_batch_second[:, ::self.downsample_sound_by]
-            input_batch_second = np.repeat(input_batch_second, self.spike_shape[1], 2)
-            if 'nvoice_preprocessing' in self.data_type:
-                input_batch_second = np.random.randn(*input_batch_second.shape)
+
 
         return {'input_spikes': input_batch_second, 'noisy_sound': input_batch_first, 'clean_sound': output_batch}
-
-
-class Random_Generator(BaseGenerator):
-    def __init__(self,
-                 sound_shape=None,
-                 spike_shape=None,
-                 batch_size=32,
-                 data_type='noSpikes',
-                 downsample_sound_by=3):
-        self.__dict__.update(batch_size=batch_size, data_type=data_type,
-                             downsample_sound_by=downsample_sound_by)
-
-        self.spike_shape = spike_shape
-        self.sound_shape = sound_shape
-        self.ratio_sound_spike = int(sound_shape[0] / downsample_sound_by) / spike_shape[0]
-
-    def __len__(self):
-        return 2
-
-    def select_subject(self, subject=None):
-        pass
-
-    def batch_generation(self):
-        # input_batch = np.array(np.random.rand(self.batch_size, *self.input_shape), dtype='float32')
-        spike_batch = np.array(np.random.rand(self.batch_size, *self.spike_shape), dtype='float32')
-        spike_batch = np.repeat(spike_batch, self.ratio_sound_spike, 1)
-
-        sound_batch = np.array(np.random.rand(self.batch_size, *self.sound_shape), dtype='float32')[:,
-                      ::self.downsample_sound_by, :]
-
-        return {'input_spikes': spike_batch, 'noisy_sound': sound_batch, 'clean_sound': sound_batch}

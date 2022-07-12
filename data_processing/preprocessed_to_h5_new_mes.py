@@ -1,12 +1,10 @@
 
-
-## for FBC model
-import  mne, os, h5py, random
+import mne, os, h5py, random
 import numpy as np
 from scipy.io.wavfile import read as read_wav
-# from tqdm import tqdm
 import tensorflow as tf
 import sys
+import scipy.io as spio
 
 sys.path.append('../')
 
@@ -18,7 +16,7 @@ tf.random.set_seed(seed)
 
 n_splits = 12#9 # 1 30
 preprocessing = 'eeg'  # , 'eeg', 'fbc', raw_eeg
-seconds = int(48 / n_splits)#int(36 / n_splits)
+seconds = int(48 / n_splits)
 
 if seconds == 4:
     time_folder = '4s'
@@ -26,8 +24,7 @@ if seconds == 4:
 else:
     NotImplementedError
 
-#n_splits = 3
-    
+
     
 def rms_normalize(audio):
     rms = np.sqrt(np.mean((audio ** 2)))
@@ -36,7 +33,7 @@ def rms_normalize(audio):
     return audio
 
 
-import scipy.io as spio
+
 
 def loadmat(filename):
     '''
@@ -72,8 +69,7 @@ def _todict(matobj):
     return dict
 
 
-#CDIR = os.path.dirname(os.path.realpath(__file__))
-CDIR = 'C:/Users\hoss3301\work\TrialsOfNeuralVocalRecon\data_processing'
+CDIR = os.path.dirname(os.path.realpath(__file__))
 DATADIR = os.path.abspath(os.path.join(*[CDIR, '..', 'data', 'Mesgarani']))
 TIMEDIR = os.path.join(*[DATADIR, 'Normalized', time_folder])
 h5_DIR = os.path.join(*[TIMEDIR, preprocessing,'new'])
@@ -111,11 +107,8 @@ subject_indices = np.arange(23,45)
 
 trial=np.arange(1,33).tolist()
 random.Random(14).shuffle(trial)
-#test_trials = np.arange(25, 31).tolist()
 test_trials = trial[0:3]
-#val_subjects = [3, 29]
-#val_trials = trial[5:7]
-#val_trials = np.arange(23, 26).tolist()
+
 
 data = {}
 for k_1 in ['eegs_', 'noisy_', 'clean_', 'unattended_', 'subjects_']:

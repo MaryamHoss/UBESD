@@ -1,7 +1,3 @@
-
-# lucas way
-
-## for FBC model
 import  mne, os, h5py, random
 import numpy as np
 from scipy.io.wavfile import read as read_wav
@@ -17,19 +13,18 @@ random.seed(seed)
 np.random.seed(seed)
 tf.random.set_seed(seed)
 
-n_splits = 30 # 1 30
+n_splits = 30 # 3 30
 preprocessing = 'fbc'  # , 'eeg', 'fbc', raw_eeg
 seconds = int(60 / n_splits)
 
-if seconds == 60:
-    time_folder = '60s'
+if seconds == 20:
+    time_folder = '20s'
 elif seconds == 2:
     time_folder = '2s'
 else:
     NotImplementedError
 
-#n_splits = 3
-    
+
     
 def rms_normalize(audio):
     rms = np.sqrt(np.mean(audio ** 2))
